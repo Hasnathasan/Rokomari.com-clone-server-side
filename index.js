@@ -1,7 +1,7 @@
-const express = require('express');
-const app = express();
-const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const express = require('express');
+const cors = require('cors');
+const app = express();
 require('dotenv').config()
 const port = process.env.PORT || 5000;
 
@@ -30,15 +30,50 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        // await client.connect();
+        await client.connect();
 
         //Collections
-        const hotDealsCollection = client.db('rokomari_server').collection('hot-deals')
-        const fictionBooksCollection = client.db('rokomari_server').collection('fictionBooks')
-        const nonFictionBooksCollection = client.db('rokomari_server').collection('nonFictionBooks')
-        const islamiBooksCollection = client.db('rokomari_server').collection('islamiBooks')
-        const westBangleBooksCollection = client.db('rokomari_server').collection('westBengleBooks')
-        const academicBooksBooksCollection = client.db('rokomari_server').collection('academicBooks')
+        const hotDealsCollection = client.db('rokomari_server').collection('hot-deals');
+        const booksCollection = client.db('rokomari_server').collection('books');
+        const usersCollection = client.db('rokomari_server').collection('users');
+
+        app.get('/users', async(req, res) => {
+            const result = await usersCollection.find().toArray()
+            res.send(result)
+        }) 
+
+        app.get('/eachUser/:email', async(req, res) => {
+            const email = req.params.email;
+            console.log(email);
+            const query = { email : email };
+            const result = await usersCollection.findOne(query);
+            if(result === null){
+                res.send({"notFound": true});
+            }
+            else{
+
+                res.send(result)
+            }
+        })
+
+        app.get('/each-user-by-number/:number', async(req, res) => {
+            const number = req.params.number;
+            const query = { phoneNumber: number };
+            const result = await usersCollection.findOne(query);
+            if(result === null){
+                res.send({"notFound": true});
+            }
+            else{
+
+                res.send(result)
+            }
+        })
+
+        app.post('/users', async(req, res) => {
+            const data = req.body;
+            const result = await usersCollection.insertOne(data);
+            res.send(result)
+        })
         
         app.get('/hot-deals', async(req,res)=>{
             const result = await hotDealsCollection.find().toArray()
@@ -51,55 +86,21 @@ async function run() {
             res.send(result);
           });
 
-        app.get('/fiction-books', async(req,res)=>{
-            const result = await fictionBooksCollection.find().toArray()
+        app.get("/books", async(req, res) => {
+            const result = await booksCollection.find().toArray();
             res.send(result)
         })
-        app.get("/fiction-books/:id", async (req, res) => {
+        app.get("/books/:id", async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
-            const result = await fictionBooksCollection.findOne(query);
+            const result = await booksCollection.findOne(query);
             res.send(result);
           });
 
-        app.get('/non-fiction-books', async(req,res)=>{
-            const result = await nonFictionBooksCollection.find().toArray()
-            res.send(result)
-        })
-        app.get("/non-fiction-books/:id", async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
-            const result = await nonFictionBooksCollection.findOne(query);
-            res.send(result);
-          });
-        app.get('/islami-books', async(req,res)=>{
-            const result = await islamiBooksCollection.find().toArray()
-            res.send(result)
-        })
-        app.get("/islami-books/:id", async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
-            const result = await islamiBooksCollection.findOne(query);
-            res.send(result);
-          });
-        app.get('/west-bangle-books', async(req,res)=>{
-            const result = await westBangleBooksCollection.find().toArray()
-            res.send(result)
-        })
-        app.get("/west-bangle-books/:id", async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
-            const result = await westBangleBooksCollection.findOne(query);
-            res.send(result);
-          });
-        app.get('/academic-books', async(req,res)=>{
-            const result = await academicBooksBooksCollection.find().toArray()
-            res.send(result)
-        })
-        app.get("/academic-books/:id", async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
-            const result = await academicBooksBooksCollection.findOne(query);
+        app.get("/booksByCategory/:category", async (req, res) => {
+            const category = req.params.category;
+            const query = { "main_category": category };
+            const result = await booksCollection.find(query).toArray();
             res.send(result);
           });
 
