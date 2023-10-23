@@ -1,11 +1,13 @@
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
-const cors = require('cors');
-const app = express();
+const cors = require("cors");
 require('dotenv').config()
-const port = process.env.PORT || 5000;
+const app = express();
+const port = process.env.PORT || 8000;
 
-//middleware
+
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
@@ -74,6 +76,26 @@ async function run() {
             const result = await usersCollection.insertOne(data);
             res.send(result)
         })
+
+        app.patch('/updateUser/:id', async(req, res) => {
+            const data = req.body;
+            const id = req.params.id;
+            console.log(data);
+            const filter = { _id: new ObjectId(id)};
+            const updateDoc = {
+                $set:{
+                    name: data.name,
+                    email: data.email,
+                    phoneNumber: data.phoneNumber,
+                    date_of_birth: data.date_of_birth,
+                    gender: data.gender,
+                    photoUrl: data.photoUrl
+                }
+            };
+            const result = await usersCollection.updateOne(filter, updateDoc);
+            res.send(result)
+
+        })
         
         app.get('/hot-deals', async(req,res)=>{
             const result = await hotDealsCollection.find().toArray()
@@ -121,7 +143,7 @@ run().catch(console.dir);
 
 
 app.listen(port, () => {
-    console.log(`Rokomari is Running on port ${port || 5000}`)
+    console.log(`Rokomari is Running on port ${port}`)
 })
 
 
