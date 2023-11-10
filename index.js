@@ -1,22 +1,18 @@
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
-const cors = require("cors");
-require('dotenv').config()
+const cors = require('cors');
+require('dotenv').config();
+
 const app = express();
 const port = process.env.PORT || 8000;
-
-
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-
 app.get('/', (req, res) => {
-    res.send('Rokomari is Running')
-})
-
-
+    res.send('Rokomari is Running');
+});
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.lmw0s1b.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -26,120 +22,114 @@ const client = new MongoClient(uri, {
         version: ServerApiVersion.v1,
         strict: true,
         deprecationErrors: true,
-    }
+    },
 });
 
-async function run() {
+async function connectToMongoDB() {
     try {
-        // Connect the client to the server	(optional starting in v4.7)
+        // Connect the client to the server (optional starting in v4.7)
         await client.connect();
 
-        //Collections
-        const hotDealsCollection = client.db('rokomari_server').collection('hot-deals');
-        const booksCollection = client.db('rokomari_server').collection('books');
-        const usersCollection = client.db('rokomari_server').collection('users');
+        // Collections
+        const db = client.db('rokomari_server');
+        const hotDealsCollection = db.collection('hot-deals');
+        const booksCollection = db.collection('books');
+        const usersCollection = db.collection('users');
 
-        app.get('/users', async(req, res) => {
-            const result = await usersCollection.find().toArray()
-            res.send(result)
-        }) 
+        // Users Endpoints
+        app.get('/users', async (req, res) => {
+            const result = await usersCollection.find().toArray();
+            res.send(result);
+        });
 
-        app.get('/eachUser/:email', async(req, res) => {
+        app.get('/eachUser/:email', async (req, res) => {
             const email = req.params.email;
-            console.log(email);
-            const query = { email : email };
+            const query = { email: email };
             const result = await usersCollection.findOne(query);
-            if(result === null){
-                res.send({"notFound": true});
-            }
-            else{
+            res.send(result || { "notFound": true });
+        });
 
-                res.send(result)
-            }
-        })
-
-        app.get('/each-user-by-number/:number', async(req, res) => {
+        app.get('/each-user-by-number/:number', async (req, res) => {
             const number = req.params.number;
             const query = { phoneNumber: number };
             const result = await usersCollection.findOne(query);
-            if(result === null){
-                res.send({"notFound": true});
-            }
-            else{
+            res.send(result || { "notFound": true });
+        });
 
-                res.send(result)
-            }
-        })
-
-        app.post('/users', async(req, res) => {
+        app.post('/users', async (req, res) => {
             const data = req.body;
             const result = await usersCollection.insertOne(data);
-            res.send(result)
-        })
+            res.send(result);
+        });
 
-        app.patch('/updateUser/:id', async(req, res) => {
+        app.patch('/updateUser/:id', async (req, res) => {
             const data = req.body;
             const id = req.params.id;
-            console.log(data);
-            const filter = { _id: new ObjectId(id)};
+            const filter = { _id: new ObjectId(id) };
             const updateDoc = {
-                $set:{
+                $set: {
                     name: data.name,
                     email: data.email,
                     phoneNumber: data.phoneNumber,
                     date_of_birth: data.date_of_birth,
                     gender: data.gender,
-                    photoUrl: data.photoUrl
-                }
+                    photoUrl: data.photoUrl,
+                },
             };
             const result = await usersCollection.updateOne(filter, updateDoc);
-            res.send(result)
+            res.send(result);
+        });
 
-        })
-        
-        app.get('/hot-deals', async(req,res)=>{
-            const result = await hotDealsCollection.find().toArray()
-            res.send(result)
-        })
-        app.get("/hot-deals/:id", async (req, res) => {
+        // Hot Deals Endpoints
+        app.get('/hot-deals', async (req, res) => {
+            const result = await hotDealsCollection.find().toArray();
+            res.send(result);
+        });
+
+        app.get('/hot-deals/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await hotDealsCollection.findOne(query);
             res.send(result);
-          });
+        });
 
-        app.get("/books", async(req, res) => {
+        // Books Endpoints
+        app.get('/books', async (req, res) => {
             const result = await booksCollection.find().toArray();
-            res.send(result)
-        })
-        app.get("/books/:id", async (req, res) => {
+            res.send(result);
+        });
+
+        app.get('/books/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await booksCollection.findOne(query);
             res.send(result);
-          });
+        });
 
-        app.get("/booksByCategory/:category", async (req, res) => {
+        app.get('/booksByCategory/:category', async (req, res) => {
             const category = req.params.category;
-            const query = { "main_category": category };
+            const query = { main_category: category };
             const result = await booksCollection.find(query).toArray();
             res.send(result);
-          });
-
-
-        
-
-
+        });
 
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
-    } finally {
-        // Ensures that the client will close when you finish/error
-        // await client.close();
+        await client.db('admin').command({ ping: 1 });
+        console.log('Pinged your deployment. You successfully connected to MongoDB!');
+    } catch (error) {
+        console.error('Error connecting to MongoDB:', error);
     }
 }
+
+async function run() {
+    await connectToMongoDB();
+    app.listen(port, () => {
+        console.log(`Rokomari is Running on port ${port}`);
+    });
+}
+
 run().catch(console.dir);
+
 
 
 app.listen(port, () => {
