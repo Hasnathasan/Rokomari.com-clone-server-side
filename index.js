@@ -33,7 +33,28 @@ async function connectToMongoDB() {
         const db = client.db('rokomari_server');
         const hotDealsCollection = db.collection('hot-deals');
         const booksCollection = db.collection('books');
+        const productCollection = db.collection('products');
         const usersCollection = db.collection('users');
+
+
+
+        app.get('/books', async (req, res) => {
+            const result = await booksCollection.find().toArray();
+            res.send(result);
+        });
+
+        app.get('/products', async (req, res) => {
+            const result = await productCollection.find().toArray();
+            res.send(result);
+        });
+
+
+        app.get('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await productCollection.findOne(query);
+            res.send(result);
+        });
 
         // Users Endpoints
         app.get('/users', async (req, res) => {
@@ -93,10 +114,7 @@ async function connectToMongoDB() {
         });
 
         // Books Endpoints
-        app.get('/books', async (req, res) => {
-            const result = await booksCollection.find().toArray();
-            res.send(result);
-        });
+        
 
         app.get('/books/:id', async (req, res) => {
             const id = req.params.id;
